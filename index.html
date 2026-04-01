@@ -18,9 +18,10 @@ body {
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  min-height: 100vh;
 }
 
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 
 header {
   display: flex;
@@ -31,62 +32,101 @@ header {
   border-bottom: 1px solid var(--card2);
 }
 
-.logo { font-weight: 700; font-size: 1.5rem; color: var(--accent-light); }
+.logo { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--accent-light); }
 
 .config-panel {
   background: var(--card);
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  padding: 25px;
+  border-radius: 16px;
+  margin-bottom: 30px;
   border: 1px solid var(--card3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .input-group {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
+  margin-top: 15px;
 }
 
 input {
   background: var(--bg2);
   border: 1px solid var(--card3);
   color: white;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  transition: border 0.3s;
 }
+
+input:focus { border-color: var(--accent); }
 
 button {
   background: var(--accent);
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
+  padding: 14px 25px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-#status-msg { margin-top: 15px; font-size: 0.9rem; padding: 10px; border-radius: 6px; display: none; white-space: pre-wrap; word-break: break-word; }
-.error { display: block !important; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-.success { display: block !important; background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid var(--success); }
+button:hover { background: var(--accent-light); transform: translateY(-2px); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.activity-item {
+#status-msg { 
+  margin-top: 20px; 
+  font-size: 0.9rem; 
+  padding: 12px; 
+  border-radius: 8px; 
+  display: none;
+  border-left: 4px solid transparent;
+  white-space: pre-line;
+}
+.error { display: block !important; background: rgba(239, 68, 68, 0.1); color: #ff8080; border-left-color: var(--danger); }
+.success { display: block !important; background: rgba(34, 197, 94, 0.1); color: #80ffab; border-left-color: var(--success); }
+
+.activity-list {
+  display: grid;
+  gap: 12px;
+}
+
+.activity-card {
   background: var(--card);
-  margin-bottom: 10px;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 18px;
+  border-radius: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border: 1px solid var(--card3);
+  transition: transform 0.2s;
 }
 
-.stat-card {
-  background: var(--card);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid var(--card3);
-  margin-bottom: 20px;
+.activity-card:hover { 
+  transform: scale(1.01); 
+  background: var(--card2);
+  border-color: var(--accent);
+}
+
+.act-main h4 { font-size: 1.1rem; margin-bottom: 4px; color: #fff; }
+.act-sub { color: var(--muted2); font-size: 0.85rem; }
+
+.act-stats { text-align: right; }
+.act-val { font-weight: 700; font-size: 1.2rem; color: var(--accent-light); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted2);
+}
+
+@media (max-width: 600px) {
+  .input-group { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -94,32 +134,34 @@ button {
 
 <div class="container">
   <header>
-    <div class="logo">TRAIL ANALYTICS PRO</div>
+    <div class="logo">TRAIL ANALYTICS <span style="font-weight:300">PRO</span></div>
+    <div id="date-now" style="font-size: 0.8rem; color: var(--muted2)"></div>
   </header>
 
   <div class="config-panel">
-    <h3>Conectar con Intervals.icu</h3>
-    <p style="font-size: 0.85rem; color: var(--muted2); margin-bottom: 15px;">
-        Si los proxies públicos fallan, intenta desactivar extensiones de AdBlock o navegar en modo Incógnito.<br>
-        <strong>Usa tu Athlete ID numérico y la API Key de Ajustes > Desarrollador.</strong>
-    </p>
+    <h3 style="margin-bottom: 5px">Configuración de Conexión</h3>
+    <p style="font-size: 0.85rem; color: var(--muted2)">Accede a tus datos de Intervals.icu de forma segura.</p>
+    
     <div class="input-group">
-      <input type="text" id="athlete-id" placeholder="ID Atleta (ej: 123456)">
-      <input type="password" id="api-key" placeholder="API Key">
-      <button id="btn-load" onclick="fetchActivities()">Cargar Datos</button>
+      <input type="text" id="athlete-id" placeholder="ID Atleta (solo números)">
+      <input type="password" id="api-key" placeholder="API Key de Intervals.icu">
+      <button id="btn-load" onclick="fetchActivities()">Cargar Actividades</button>
     </div>
     <div id="status-msg"></div>
   </div>
 
-  <div id="summary" style="display: none;">
-    <div class="stat-card">
-        <h4 id="summary-text"></h4>
+  <div id="results-area" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px">
+        <h2 id="results-title" style="font-size: 1.2rem">Actividades Recientes</h2>
+        <div id="total-count" style="background: var(--card3); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem"></div>
     </div>
-    <div id="activities-list"></div>
+    <div id="activities-list" class="activity-list"></div>
   </div>
 </div>
 
 <script>
+document.getElementById('date-now').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+
 function showStatus(msg, isError = false) {
     const el = document.getElementById('status-msg');
     el.textContent = msg;
@@ -132,13 +174,13 @@ async function fetchActivities() {
     const btn = document.getElementById('btn-load');
 
     if (!aid || !key) {
-        showStatus("Faltan credenciales", true);
+        showStatus("Introduce tu ID y API Key.", true);
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = "Conectando...";
-    showStatus("Solicitando datos a Intervals.icu...");
+    btn.innerHTML = "Conectando...";
+    showStatus("Solicitando datos...");
 
     const now = new Date();
     const past = new Date();
@@ -149,77 +191,89 @@ async function fetchActivities() {
     const authHeader = 'Basic ' + btoa(`API_KEY:${key}`);
 
     try {
-        // Intentamos con AllOrigins primero pero con un bloque try-catch interno más específico
-        let data = await tryFetchWithProxy(targetUrl, authHeader);
+        // --- INTENTO 1: CORSPROXY.IO (Más estable actualmente) ---
+        let data = await tryCorsProxyIo(targetUrl, authHeader);
         
-        if (data && Array.isArray(data)) {
+        // --- INTENTO 2: ALLORIGINS (Fallback) ---
+        if (!data) {
+            console.log("Intento 1 falló, probando fallback...");
+            data = await tryAllOrigins(targetUrl, authHeader);
+        }
+
+        if (data) {
             renderActivities(data);
-            showStatus("¡Datos cargados con éxito!", false);
+            showStatus("¡Conexión establecida con éxito!", false);
+            document.getElementById('results-area').style.display = 'block';
         } else {
-            throw new Error("No se pudieron procesar los datos. Verifica tu ID y API Key.");
+            throw new Error("No se pudo obtener respuesta de los servidores proxy.");
         }
 
     } catch (err) {
         console.error("Error final:", err);
-        showStatus("Error: " + err.message + "\n\nTip: Algunos proxies bloquean peticiones desde ciertos dominios. Prueba a subir este archivo a un servidor web o GitHub Pages.", true);
+        showStatus("Error: No se pudo conectar con Intervals.icu.\n\nCausas probables:\n1. AdBlocker activado (desactívalo).\n2. API Key incorrecta.\n3. Servidor de proxy caído.", true);
     } finally {
         btn.disabled = false;
-        btn.textContent = "Cargar Datos";
+        btn.innerHTML = "Cargar Actividades";
     }
 }
 
-async function tryFetchWithProxy(target, auth) {
-    // Usamos AllOrigins como proxy principal, es el más estable para entornos de cliente puro
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
-    
+async function tryCorsProxyIo(target, auth) {
     try {
+        // corsproxy.io es muy fiable y permite pasar cabeceras directamente
+        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(target)}`, {
+            headers: { 'Authorization': auth }
+        });
+        if (res.status === 401) throw new Error("API Key incorrecta.");
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
+        if (e.message.includes("API Key")) throw e;
+        return null;
+    }
+}
+
+async function tryAllOrigins(target, auth) {
+    try {
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
         const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("Fallo de red en el servidor Proxy.");
-        
+        if (!res.ok) return null;
         const json = await res.json();
-        if (!json.contents) throw new Error("El proxy no devolvió contenido.");
-
-        // AllOrigins devuelve el contenido como string, hay que parsearlo
         const content = JSON.parse(json.contents);
-        
-        // Si Intervals devolvió un objeto de error (como un 401/403) suele venir dentro
-        if (content.status && (content.status === 401 || content.status === 403)) {
-            throw new Error("Acceso denegado por Intervals.icu. Revisa tu API Key.");
-        }
-        
-        if (content.error) {
-            throw new Error("Intervals API: " + content.error);
-        }
-
+        if (content.error || content.status === 401) return null;
         return content;
     } catch (e) {
-        console.error("Error en tryFetchWithProxy:", e);
-        throw e;
+        return null;
     }
 }
 
 function renderActivities(list) {
     const container = document.getElementById('activities-list');
-    const summary = document.getElementById('summary');
     container.innerHTML = "";
-    summary.style.display = "block";
     
-    document.getElementById('summary-text').textContent = `Encontradas ${list.length} actividades (Últimos 30 días)`;
+    if (!Array.isArray(list) || list.length === 0) {
+        container.innerHTML = '<div class="empty-state">No se encontraron actividades.</div>';
+        document.getElementById('total-count').textContent = "0";
+        return;
+    }
 
+    document.getElementById('total-count').textContent = list.length + " sesiones";
     list.sort((a,b) => new Date(b.start_date_local) - new Date(a.start_date_local));
 
     list.forEach(act => {
         const div = document.createElement('div');
-        div.className = 'activity-item';
-        const dist = act.distance ? (act.distance/1000).toFixed(2) : "0.00";
+        div.className = 'activity-card';
+        const date = new Date(act.start_date_local).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+        const dist = act.distance ? (act.distance / 1000).toFixed(2) : "0.00";
+        const load = act.icu_training_load || 0;
+
         div.innerHTML = `
-            <div>
-                <strong>${act.name || 'Sin nombre'}</strong><br>
-                <small style="color:var(--muted2)">${new Date(act.start_date_local).toLocaleDateString()} · ${act.type}</small>
+            <div class="act-main">
+                <h4>${act.name || 'Entrenamiento'}</h4>
+                <div class="act-sub">${date} • ${act.type} • ${act.moving_time ? Math.round(act.moving_time/60) : 0} min</div>
             </div>
-            <div style="text-align:right">
-                <div>${dist} km</div>
-                <small style="color:var(--accent)">${act.icu_training_load || 0} Load</small>
+            <div class="act-stats">
+                <div class="act-val">${dist} <span style="font-size:0.7rem; color:var(--muted2)">KM</span></div>
+                <div class="act-sub" style="color:var(--success)">${load} LOAD</div>
             </div>
         `;
         container.appendChild(div);
